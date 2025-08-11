@@ -1,0 +1,21 @@
+{
+  "name": "cloudinary-delete-server",
+  "version": "1.0.0",
+  "description": "Simple server for Cloudinary file deletion",
+  "main": "cloudinary-delete.js",
+  "scripts": {
+    "start": "node cloudinary-delete.js",
+    "dev": "nodemon cloudinary-delete.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cloudinary": "^1.41.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["cloudinary", "express", "file-deletion"],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null && userDoc.data != null && userDoc.data.role == "admin";
+    }
+
+    // Users can read/write their own profile
+    // Allow creation and updates of own profile (for admin elevation)
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Chat rooms - only admins can create, all users can read
+    match /chatRooms/{roomId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Messages in specific rooms - all users can read and write (so they can send messages)
+    match /chatRooms/{roomId}/messages/{messageId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // Files - users can read/write their own files
+    match /files/{fileId} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.userid;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userid;
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.userid;
+    }
+
+    // Bookings - users can read their own bookings, admins can read all
+    match /bookings/{bookingId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.userid || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userid;
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.userid;
+    }
+
+    // User favorites - users can read/write their own favorites
+    match /users/{userId}/favorites/{favoriteId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Only admins can create messages, all users can read
+    match /messages/{messageId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Todos - only users can create their own todos, admins cannot create todos
+    match /todos/{todoId} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.userid;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userid;
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.userid;
+    }
+
+    // Events - all authenticated users can create/update/delete, all users can read
+    match /events/{eventId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Products - all authenticated users can create/update/delete, all users can read
+    match /products/{productId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Feedback - users can write/read their own feedback
+    match /feedbacks/{feedbackId} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.userid;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userid;
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.userid;
+    }
+
+    // Blog posts - all authenticated users can create/update/delete, all users can read
+    match /blogPosts/{postId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Notifications - only admins can create/update/delete, all users can read
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Deny all else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
